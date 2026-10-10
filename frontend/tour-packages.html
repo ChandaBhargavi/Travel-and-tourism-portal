@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tour Packages - TravelGo</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <nav class="navbar">
+        <a href="index.html" class="logo">
+            <i class="fa-solid fa-plane-departure"></i> TravelGo
+        </a>
+        <ul class="nav-links" id="nav-links"></ul>
+    </nav>
+
+    <main class="container">
+        <div class="page-header">
+            <h1 id="page-title">Curated Tour Packages</h1>
+            <p id="page-subtitle">Search, filter, and discover your next dream adventure.</p>
+        </div>
+
+        <!-- Advanced Search & Filter Bar -->
+        <div class="filters-card">
+            <div class="filters-grid">
+                <div class="form-group" style="margin: 0;">
+                    <label for="search-input"><i class="fa-solid fa-magnifying-glass"></i> Search Packages</label>
+                    <input type="text" id="search-input" class="form-control" placeholder="Search by title, destination, keyword...">
+                </div>
+
+                <div class="form-group" style="margin: 0;">
+                    <label for="dest-filter"><i class="fa-solid fa-location-dot"></i> Destination</label>
+                    <select id="dest-filter" class="form-control">
+                        <option value="">All Destinations</option>
+                    </select>
+                </div>
+
+                <div class="price-slider-box">
+                    <label style="font-weight: 600; font-size: 0.9rem; color: var(--text-color); display: flex; justify-content: space-between;">
+                        <span>Max Price:</span>
+                        <strong id="price-slider-val" style="color: var(--primary-color);">₹25,000</strong>
+                    </label>
+                    <input type="range" id="price-slider" min="3000" max="25000" step="500" value="25000">
+                </div>
+
+                <div class="form-group" style="margin: 0;">
+                    <label for="sort-select"><i class="fa-solid fa-arrow-down-short-wide"></i> Sort By</label>
+                    <select id="sort-select" class="form-control">
+                        <option value="default">Default</option>
+                        <option value="price_low">Price: Low to High</option>
+                        <option value="price_high">Price: High to Low</option>
+                        <option value="rating_high">Highest Rated ⭐</option>
+                        <option value="duration">Duration (Longest First)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div id="alert-banner" class="alert"></div>
+
+        <div class="grid" id="packages-grid">
+            <p style="text-align:center; grid-column: 1/-1;">Loading tour packages...</p>
+        </div>
+    </main>
+
+    <!-- Reviews & Ratings Modal Dialog -->
+    <div id="reviews-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <button onclick="closeReviewsModal()" class="modal-close-btn">&times;</button>
+            <h2 id="modal-pkg-title" style="margin-bottom: 0.3rem;">Package Reviews</h2>
+            <div id="modal-pkg-sub" style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;"></div>
+
+            <!-- Submit Review Form -->
+            <div style="background: #f8fafc; padding: 1.25rem; border-radius: var(--radius-md); margin-bottom: 1.5rem; border: 1px solid var(--border-color);">
+                <h4 style="margin-bottom: 0.5rem;">Write a Review</h4>
+                <form id="add-review-form">
+                    <input type="hidden" id="review-pkg-id">
+                    <div style="margin-bottom: 0.5rem;">
+                        <label style="font-size: 0.85rem; font-weight: 600;">Your Rating:</label>
+                        <div class="star-picker" id="star-picker">
+                            <i class="fa-solid fa-star selected" data-value="1"></i>
+                            <i class="fa-solid fa-star selected" data-value="2"></i>
+                            <i class="fa-solid fa-star selected" data-value="3"></i>
+                            <i class="fa-solid fa-star selected" data-value="4"></i>
+                            <i class="fa-solid fa-star selected" data-value="5"></i>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <textarea id="review-comment" class="form-control" rows="2" placeholder="Share your experience about this tour..." required></textarea>
+                    </div>
+                    <button type="submit" id="post-review-btn" class="btn btn-primary btn-sm">Submit Review</button>
+                </form>
+            </div>
+
+            <h4 style="margin-bottom: 1rem;">Customer Reviews (<span id="modal-review-count">0</span>)</h4>
+            <div id="modal-reviews-list" style="display: flex; flex-direction: column; gap: 1rem; max-height: 250px; overflow-y: auto;">
+                <p style="color: var(--text-muted);">Loading reviews...</p>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>TravelGo Portal</h3>
+                <p>Making travel accessible, affordable, and memorable for everyone.</p>
+            </div>
+            <div class="footer-section">
+                <h3>Quick Links</h3>
+                <p><a href="destinations.html">Destinations</a></p>
+                <p><a href="tour-packages.html">Tour Packages</a></p>
+            </div>
+            <div class="footer-section">
+                <h3>Contact</h3>
+                <p>support@travelgo.com</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            &copy; 2026 TravelGo Portal.
+        </div>
+    </footer>
+
+    <script src="api.js"></script>
+    <script>
+        let allPackages = [];
+        let allDestinations = [];
+        let selectedRating = 5;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const destinationId = urlParams.get('destination');
+            const initialQuery = urlParams.get('q');
+            const showWishlistOnly = urlParams.get('wishlist') === '1';
+
+            if (initialQuery) {
+                document.getElementById('search-input').value = initialQuery;
+            }
+
+            // Load destinations for filter
+            const destRes = await api.get('/destinations');
+            if (destRes.ok && destRes.data.destinations) {
+                allDestinations = destRes.data.destinations;
+                const destSelect = document.getElementById('dest-filter');
+                destSelect.innerHTML = '<option value="">All Destinations</option>' + 
+                    allDestinations.map(d => `<option value="${d.id}" ${destinationId && String(d.id) === String(destinationId) ? 'selected' : ''}>${escapeHTML(d.name)}</option>`).join('');
+            }
+
+            // Load packages
+            let endpoint = '/packages';
+            if (destinationId) endpoint += `?destination_id=${destinationId}`;
+
+            const res = await api.get(endpoint);
+            if (res.ok && res.data.packages) {
+                allPackages = res.data.packages;
+
+                if (showWishlistOnly) {
+                    document.getElementById('page-title').textContent = 'My Favorite Wishlist';
+                    document.getElementById('page-subtitle').textContent = 'Your saved tour packages for quick booking.';
+                }
+
+                applyFiltersAndRender();
+            }
+
+            // Event Listeners for Filters
+            document.getElementById('search-input').addEventListener('input', applyFiltersAndRender);
+            document.getElementById('dest-filter').addEventListener('change', applyFiltersAndRender);
+            document.getElementById('sort-select').addEventListener('change', applyFiltersAndRender);
+            
+            const priceSlider = document.getElementById('price-slider');
+            priceSlider.addEventListener('input', (e) => {
+                document.getElementById('price-slider-val').textContent = `₹${Number(e.target.value).toLocaleString('en-IN')}`;
+                applyFiltersAndRender();
+            });
+
+            setupStarPicker();
+        });
+
+        function applyFiltersAndRender() {
+            const searchQuery = document.getElementById('search-input').value.toLowerCase().trim();
+            const selectedDest = document.getElementById('dest-filter').value;
+            const maxPrice = parseFloat(document.getElementById('price-slider').value);
+            const sortBy = document.getElementById('sort-select').value;
+            const showWishlistOnly = new URLSearchParams(window.location.search).get('wishlist') === '1';
+
+            let filtered = allPackages.filter(pkg => {
+                const matchesSearch = !searchQuery || 
+                    pkg.title.toLowerCase().includes(searchQuery) || 
+                    pkg.destination_name.toLowerCase().includes(searchQuery) ||
+                    (pkg.description && pkg.description.toLowerCase().includes(searchQuery));
+                
+                const matchesDest = !selectedDest || String(pkg.destination_id) === String(selectedDest);
+                const matchesPrice = Number(pkg.price) <= maxPrice;
+                const matchesWishlist = !showWishlistOnly || isWishlisted(pkg.id);
+
+                return matchesSearch && matchesDest && matchesPrice && matchesWishlist;
+            });
+
+            // Sorting
+            if (sortBy === 'price_low') {
+                filtered.sort((a, b) => Number(a.price) - Number(b.price));
+            } else if (sortBy === 'price_high') {
+                filtered.sort((a, b) => Number(b.price) - Number(a.price));
+            } else if (sortBy === 'rating_high') {
+                filtered.sort((a, b) => Number(b.avg_rating) - Number(a.avg_rating));
+            } else if (sortBy === 'duration') {
+                filtered.sort((a, b) => Number(b.duration_days) - Number(a.duration_days));
+            }
+
+            renderPackagesGrid(filtered);
+        }
+
+        function renderPackagesGrid(packages) {
+            const grid = document.getElementById('packages-grid');
+
+            if (packages.length === 0) {
+                grid.innerHTML = '<p style="text-align:center; grid-column: 1/-1; padding: 3rem; background: #fff; border-radius: var(--radius-lg);">No packages match your search filters.</p>';
+                return;
+            }
+
+            grid.innerHTML = packages.map(pkg => {
+                const priceFormatted = Number(pkg.price).toLocaleString('en-IN');
+                const wishlisted = isWishlisted(pkg.id);
+
+                return `
+                    <div class="card">
+                        <div class="card-img-wrapper">
+                            <img src="${escapeHTML(pkg.image_url || 'https://via.placeholder.com/400x250')}" alt="${escapeHTML(pkg.title)}" class="card-img">
+                            <button onclick="handleWishlistClick(${pkg.id}, event)" class="wishlist-btn ${wishlisted ? 'active' : ''}" title="Save to Wishlist">
+                                <i class="fa-solid fa-heart"></i>
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                <span class="badge badge-confirmed">${escapeHTML(pkg.destination_name)}</span>
+                                <div class="rating-stars" onclick="openReviewsModal(${pkg.id}, '${escapeHTML(pkg.title).replace(/'/g, "&apos;")}')" style="cursor: pointer;" title="View Reviews">
+                                    <i class="fa-solid fa-star"></i>
+                                    <strong>${pkg.avg_rating}</strong>
+                                    <span class="rating-text">(${pkg.review_count})</span>
+                                </div>
+                            </div>
+                            <h3 class="card-title">${escapeHTML(pkg.title)}</h3>
+                            <p class="card-text">${escapeHTML(pkg.description)}</p>
+                            <div class="card-meta">
+                                <span><i class="fa-regular fa-clock"></i> ${pkg.duration_days}D / ${pkg.duration_nights}N</span>
+                                <span class="price-tag">₹${priceFormatted}</span>
+                            </div>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <a href="booking.html?package=${pkg.id}" class="btn btn-accent" style="flex: 1;">Book Now</a>
+                                <button onclick="openReviewsModal(${pkg.id}, '${escapeHTML(pkg.title).replace(/'/g, "&apos;")}')" class="btn btn-outline btn-sm"><i class="fa-regular fa-comments"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function handleWishlistClick(packageId, event) {
+            event.stopPropagation();
+            const nowWishlisted = toggleWishlist(packageId);
+            const btn = event.currentTarget;
+            if (nowWishlisted) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+            if (new URLSearchParams(window.location.search).get('wishlist') === '1') {
+                applyFiltersAndRender();
+            }
+        }
+
+        // Reviews Modal Logic
+        async function openReviewsModal(packageId, packageTitle) {
+            document.getElementById('review-pkg-id').value = packageId;
+            document.getElementById('modal-pkg-title').textContent = packageTitle;
+            document.getElementById('reviews-modal').style.display = 'flex';
+            loadPackageReviews(packageId);
+        }
+
+        function closeReviewsModal() {
+            document.getElementById('reviews-modal').style.display = 'none';
+        }
+
+        async function loadPackageReviews(packageId) {
+            const list = document.getElementById('modal-reviews-list');
+            const countEl = document.getElementById('modal-review-count');
+
+            const res = await api.get(`/packages/${packageId}/reviews`);
+            if (res.ok && res.data.reviews) {
+                countEl.textContent = res.data.reviews.length;
+                if (res.data.reviews.length === 0) {
+                    list.innerHTML = '<p style="color: var(--text-muted);">No reviews yet. Be the first to leave a review!</p>';
+                    return;
+                }
+                list.innerHTML = res.data.reviews.map(r => `
+                    <div style="background: #ffffff; padding: 0.85rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem;">
+                            <strong>${escapeHTML(r.user_name)}</strong>
+                            <div class="rating-stars">${'★'.repeat(r.rating)}</div>
+                        </div>
+                        <p style="font-size: 0.9rem; color: var(--text-muted);">${escapeHTML(r.comment || 'No comment provided.')}</p>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function setupStarPicker() {
+            const stars = document.querySelectorAll('#star-picker i');
+            stars.forEach(star => {
+                star.addEventListener('click', () => {
+                    selectedRating = parseInt(star.getAttribute('data-value'), 10);
+                    stars.forEach((s, idx) => {
+                        if (idx < selectedRating) s.classList.add('selected');
+                        else s.classList.remove('selected');
+                    });
+                });
+            });
+        }
+
+        document.getElementById('add-review-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const user = getUser();
+            if (!getToken() || !user) {
+                alert('Please log in to submit a review.');
+                window.location.href = 'login.html';
+                return;
+            }
+
+            const packageId = document.getElementById('review-pkg-id').value;
+            const comment = document.getElementById('review-comment').value;
+
+            const res = await api.post(`/packages/${packageId}/reviews`, {
+                rating: selectedRating,
+                comment
+            });
+
+            if (res.ok && res.data.success) {
+                alert('Thank you! Your review has been posted.');
+                document.getElementById('review-comment').value = '';
+                loadPackageReviews(packageId);
+                const refreshRes = await api.get('/packages');
+                if (refreshRes.ok) {
+                    allPackages = refreshRes.data.packages;
+                    applyFiltersAndRender();
+                }
+            } else {
+                alert(res.data.message || 'Could not post review.');
+            }
+        });
+    </script>
+</body>
+</html>

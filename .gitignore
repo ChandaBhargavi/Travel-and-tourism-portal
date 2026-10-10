@@ -1,0 +1,13 @@
+# Node dependencies
+node_modules/
+backend/node_modules/
+
+# Environment variables & secrets
+.env
+backend/.env
+
+# Temporary / Scratch files
+scratch/
+*.log
+.DS_Store
+Thumbs.db

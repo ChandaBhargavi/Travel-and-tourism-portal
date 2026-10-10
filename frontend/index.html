@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TravelGo - Explore the World</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <!-- Sticky Navbar -->
+    <nav class="navbar">
+        <a href="index.html" class="logo">
+            <i class="fa-solid fa-plane-departure"></i> TravelGo
+        </a>
+        <ul class="nav-links" id="nav-links">
+            <!-- Dynamically rendered by api.js updateNavbar() -->
+        </ul>
+    </nav>
+
+    <!-- Main Content -->
+    <main>
+        <!-- Hero Section with Integrated Search Bar -->
+        <section class="hero">
+            <div class="hero-content">
+                <h1>Explore the World with TravelGo</h1>
+                <p>Discover unforgettable tour packages, breath-taking destinations, and seamless travel bookings tailored for your dream vacation.</p>
+                
+                <!-- Hero Search Box -->
+                <form id="hero-search-form" style="display: flex; gap: 0.5rem; max-width: 600px; margin: 0 auto 1.5rem auto;">
+                    <input type="text" id="hero-search-input" class="form-control" placeholder="Search Goa, Agra, Kerala, Manali, Ladakh..." style="font-size: 1rem; padding: 0.85rem 1.25rem;">
+                    <button type="submit" class="btn btn-accent" style="white-space: nowrap; padding: 0.85rem 1.5rem;"><i class="fa-solid fa-magnifying-glass"></i> Search</button>
+                </form>
+
+                <a href="tour-packages.html" class="btn btn-outline" style="color: #ffffff; border-color: #ffffff;">Browse All Tour Packages</a>
+            </div>
+        </section>
+
+        <!-- Welcome / About Section -->
+        <section class="container">
+            <div class="page-header">
+                <h2>Your Trusted Travel Partner</h2>
+                <p>We craft handpicked journeys to amazing destinations across India and beyond.</p>
+            </div>
+
+            <!-- Featured Destinations -->
+            <div class="page-header" style="margin-top: 3rem; margin-bottom: 1.5rem;">
+                <h3>Popular Destinations</h3>
+            </div>
+            <div class="grid" id="featured-destinations-grid">
+                <!-- Loaded via JS -->
+            </div>
+            <div style="text-align: center; margin-top: 2rem;">
+                <a href="destinations.html" class="btn btn-outline">View All Destinations</a>
+            </div>
+        </section>
+
+        <!-- Why Choose Us -->
+        <section class="features-section">
+            <div class="container">
+                <div class="page-header">
+                    <h2>Why Choose TravelGo?</h2>
+                    <p>Experience hassle-free travel planning with premium services and best price guarantees.</p>
+                </div>
+                <div class="features-grid">
+                    <div class="feature-box">
+                        <i class="fa-solid fa-compass"></i>
+                        <h3>Handpicked Destinations</h3>
+                        <p>Curated list of serene, historical, and thrilling locations for all travelers.</p>
+                    </div>
+                    <div class="feature-box">
+                        <i class="fa-solid fa-tags"></i>
+                        <h3>Best Price Guarantee</h3>
+                        <p>Transparent pricing with zero hidden charges and flexible booking options.</p>
+                    </div>
+                    <div class="feature-box">
+                        <i class="fa-solid fa-headset"></i>
+                        <h3>24/7 Dedicated Support</h3>
+                        <p>Our travel experts are always ready to assist you before, during, and after your trip.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>TravelGo Portal</h3>
+                <p>Making travel accessible, affordable, and memorable for everyone.</p>
+            </div>
+            <div class="footer-section">
+                <h3>Quick Links</h3>
+                <p><a href="destinations.html">Destinations</a></p>
+                <p><a href="tour-packages.html">Tour Packages</a></p>
+                <p><a href="login.html">Login</a></p>
+            </div>
+            <div class="footer-section">
+                <h3>Contact Us</h3>
+                <p><i class="fa-solid fa-envelope"></i> support@travelgo.com</p>
+                <p><i class="fa-solid fa-phone"></i> +91 1800-123-4567</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            &copy; 2026 TravelGo Portal. All rights reserved.
+        </div>
+    </footer>
+
+    <script src="api.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const res = await api.get('/destinations');
+            const grid = document.getElementById('featured-destinations-grid');
+            if (res.ok && res.data.destinations) {
+                const featured = res.data.destinations.slice(0, 4);
+                grid.innerHTML = featured.map(dest => `
+                    <div class="card">
+                        <img src="${escapeHTML(dest.image_url || 'https://via.placeholder.com/400x250')}" alt="${escapeHTML(dest.name)}" class="card-img">
+                        <div class="card-body">
+                            <h3 class="card-title">${escapeHTML(dest.name)}</h3>
+                            <p class="card-text">${escapeHTML(dest.description)}</p>
+                            <a href="tour-packages.html?destination=${dest.id}" class="btn btn-primary">View Packages</a>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                grid.innerHTML = '<p style="text-align:center; grid-column: 1/-1;">No destinations available at the moment.</p>';
+            }
+
+            document.getElementById('hero-search-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const query = document.getElementById('hero-search-input').value.trim();
+                if (query) {
+                    window.location.href = `tour-packages.html?q=${encodeURIComponent(query)}`;
+                } else {
+                    window.location.href = 'tour-packages.html';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

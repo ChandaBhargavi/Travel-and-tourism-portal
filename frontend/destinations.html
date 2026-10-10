@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Destinations - TravelGo</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <nav class="navbar">
+        <a href="index.html" class="logo">
+            <i class="fa-solid fa-plane-departure"></i> TravelGo
+        </a>
+        <ul class="nav-links" id="nav-links"></ul>
+    </nav>
+
+    <main class="container">
+        <div class="page-header">
+            <h1>Explore Top Destinations</h1>
+            <p>From sun-soaked beaches to historic landmarks and mountain escapes.</p>
+        </div>
+
+        <div class="grid" id="destinations-grid">
+            <p style="text-align:center; grid-column: 1/-1;">Loading destinations...</p>
+        </div>
+    </main>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>TravelGo Portal</h3>
+                <p>Making travel accessible, affordable, and memorable for everyone.</p>
+            </div>
+            <div class="footer-section">
+                <h3>Quick Links</h3>
+                <p><a href="destinations.html">Destinations</a></p>
+                <p><a href="tour-packages.html">Tour Packages</a></p>
+            </div>
+            <div class="footer-section">
+                <h3>Contact</h3>
+                <p>support@travelgo.com</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            &copy; 2026 TravelGo Portal.
+        </div>
+    </footer>
+
+    <script src="api.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const grid = document.getElementById('destinations-grid');
+            const res = await api.get('/destinations');
+
+            if (res.ok && res.data.destinations && res.data.destinations.length > 0) {
+                grid.innerHTML = res.data.destinations.map(dest => `
+                    <div class="card">
+                        <img src="${escapeHTML(dest.image_url || 'https://via.placeholder.com/400x250')}" alt="${escapeHTML(dest.name)}" class="card-img">
+                        <div class="card-body">
+                            <h3 class="card-title">${escapeHTML(dest.name)}</h3>
+                            <p class="card-text">${escapeHTML(dest.description)}</p>
+                            <a href="tour-packages.html?destination=${dest.id}" class="btn btn-primary">View Packages</a>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                grid.innerHTML = '<p style="text-align:center; grid-column: 1/-1;">No destinations found.</p>';
+            }
+        });
+    </script>
+</body>
+</html>

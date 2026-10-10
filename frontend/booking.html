@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Your Tour - TravelGo</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <nav class="navbar">
+        <a href="index.html" class="logo">
+            <i class="fa-solid fa-plane-departure"></i> TravelGo
+        </a>
+        <ul class="nav-links" id="nav-links"></ul>
+    </nav>
+
+    <main class="container">
+        <div class="form-card">
+            <div class="page-header" style="margin-bottom: 1.5rem;">
+                <h1>Book Your Tour</h1>
+                <p>Fill out your trip details, apply promo codes, and complete secure online payment.</p>
+            </div>
+
+            <div id="alert-banner" class="alert"></div>
+
+            <form id="booking-form">
+                <div class="form-group">
+                    <label for="package_id">Select Package *</label>
+                    <select id="package_id" name="package_id" class="form-control" required>
+                        <option value="">-- Select Tour Package --</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="full_name">Full Name *</label>
+                    <input type="text" id="full_name" name="full_name" class="form-control" placeholder="Enter your full name" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email Address *</label>
+                    <input type="email" id="email" name="email" class="form-control" placeholder="name@example.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="phone">Phone Number</label>
+                    <input type="tel" id="phone" name="phone" class="form-control" placeholder="+91 9876543210">
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label for="num_people">Travelers *</label>
+                        <input type="number" id="num_people" name="num_people" class="form-control" min="1" value="1" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="travel_date">Travel Date *</label>
+                        <input type="date" id="travel_date" name="travel_date" class="form-control" required>
+                    </div>
+                </div>
+
+                <!-- Promo Code Section -->
+                <div style="margin-bottom: 1.25rem;">
+                    <label style="font-weight: 600; font-size: 0.9rem; color: var(--text-color); display: block; margin-bottom: 0.4rem;">
+                        <i class="fa-solid fa-ticket" style="color: var(--accent-color);"></i> Have a Promo Code?
+                    </label>
+                    <div class="coupon-box">
+                        <input type="text" id="coupon_input" class="form-control" placeholder="e.g. WELCOME10, HOLIDAY1000" style="text-transform: uppercase;">
+                        <button type="button" onclick="applyPromoCoupon()" class="btn btn-outline btn-sm">Apply</button>
+                    </div>
+                    <small style="color: var(--text-muted); font-size: 0.8rem;">Available codes: <strong>WELCOME10</strong> (10% off), <strong>HOLIDAY1000</strong> (₹1,000 off), <strong>SUMMER20</strong> (20% off)</small>
+                </div>
+
+                <!-- Itemized Price Breakdown Box -->
+                <div class="price-breakdown">
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>Base Amount:</span>
+                        <strong id="base-amount-display">₹0.00</strong>
+                    </div>
+                    <div id="discount-row" style="display: none; justify-content: space-between; color: var(--success-color);">
+                        <span>Coupon Discount (<span id="applied-coupon-code"></span>):</span>
+                        <strong id="discount-amount-display">-₹0.00</strong>
+                    </div>
+                    <hr style="margin: 0.5rem 0; border: none; border-top: 1px dashed var(--border-color);">
+                    <div style="display: flex; justify-content: space-between; font-size: 1.15rem; color: var(--primary-dark);">
+                        <strong>Total Payable:</strong>
+                        <strong id="total-price-display">₹0.00</strong>
+                    </div>
+                </div>
+
+                <!-- Payment Choice Section -->
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="font-weight: 700; font-size: 1rem; color: var(--text-color); display: block; margin-bottom: 0.75rem;">
+                        <i class="fa-solid fa-credit-card" style="color: var(--primary-color);"></i> Select Payment Option *
+                    </label>
+
+                    <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+                        <label style="flex: 1; display: flex; align-items: center; gap: 0.5rem; background: #f8fafc; padding: 0.85rem; border-radius: var(--radius-md); border: 1.5px solid var(--border-color); cursor: pointer;">
+                            <input type="radio" name="pay_option" value="online" checked onchange="togglePaymentSection()">
+                            <span><strong>Pay Online Now</strong> (Instant Confirmation)</span>
+                        </label>
+                        <label style="flex: 1; display: flex; align-items: center; gap: 0.5rem; background: #f8fafc; padding: 0.85rem; border-radius: var(--radius-md); border: 1.5px solid var(--border-color); cursor: pointer;">
+                            <input type="radio" name="pay_option" value="pay_later" onchange="togglePaymentSection()">
+                            <span><strong>Pay Later</strong> (Pending Confirmation)</span>
+                        </label>
+                    </div>
+
+                    <!-- Online Payment Method Selector -->
+                    <div id="online-payment-section">
+                        <div class="payment-methods-grid">
+                            <div class="payment-option-card active" id="method-card" onclick="selectPaymentMethod('Credit/Debit Card')">
+                                <i class="fa-solid fa-credit-card"></i>
+                                <span>Card</span>
+                            </div>
+                            <div class="payment-option-card" id="method-upi" onclick="selectPaymentMethod('UPI / GPay / PhonePe')">
+                                <i class="fa-solid fa-qrcode"></i>
+                                <span>UPI / Scannable QR</span>
+                            </div>
+                            <div class="payment-option-card" id="method-netbank" onclick="selectPaymentMethod('Net Banking')">
+                                <i class="fa-solid fa-building-columns"></i>
+                                <span>Net Banking</span>
+                            </div>
+                        </div>
+
+                        <!-- Payment Input Forms Box -->
+                        <div class="payment-details-box">
+                            <!-- Card Form -->
+                            <div id="card-form">
+                                <div class="form-group">
+                                    <label>Card Number</label>
+                                    <input type="text" id="card_number" class="form-control" placeholder="4532 1122 3344 5566" maxlength="19" value="4532 1122 3344 5566">
+                                </div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                                    <div class="form-group">
+                                        <label>Expiry Date</label>
+                                        <input type="text" id="card_expiry" class="form-control" placeholder="MM/YY" maxlength="5" value="12/28">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>CVV Code</label>
+                                        <input type="password" id="card_cvv" class="form-control" placeholder="123" maxlength="4" value="123">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- UPI / Dynamic QR Code Form -->
+                            <div id="upi-form" style="display: none; text-align: center;">
+                                <div style="background: #ffffff; padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); display: inline-block; margin-bottom: 1rem;">
+                                    <img id="qr-code-img" src="" alt="Scan with GPay / PhonePe" style="width: 180px; height: 180px; display: block; margin: 0 auto 0.5rem auto;">
+                                    <div style="font-weight: 700; font-size: 0.9rem; color: var(--primary-dark);">Scan & Pay with GPay / PhonePe / Paytm</div>
+                                    <div style="font-size: 0.8rem; color: var(--text-muted);">UPI ID: <strong>travelgo@upi</strong></div>
+                                </div>
+
+                                <div class="form-group" style="text-align: left;">
+                                    <label>Or Enter Your UPI ID (e.g., name@gpay)</label>
+                                    <input type="text" id="upi_id" class="form-control" placeholder="user@gpay" value="user@gpay">
+                                </div>
+                            </div>
+
+                            <!-- Net Banking Form -->
+                            <div id="netbank-form" style="display: none;">
+                                <div class="form-group">
+                                    <label>Select Bank</label>
+                                    <select id="bank_name" class="form-control">
+                                        <option value="State Bank of India">State Bank of India (SBI)</option>
+                                        <option value="HDFC Bank">HDFC Bank</option>
+                                        <option value="ICICI Bank">ICICI Bank</option>
+                                        <option value="Axis Bank">Axis Bank</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" id="submit-btn" class="btn btn-accent" style="width: 100%; font-size: 1.05rem; padding: 0.8rem;">
+                    Pay & Confirm Booking
+                </button>
+            </form>
+        </div>
+    </main>
+
+    <!-- Payment Success Receipt Modal Dialog -->
+    <div id="receipt-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content" style="text-align: center;">
+            <div style="font-size: 3.5rem; color: var(--success-color); margin-bottom: 0.5rem;">
+                <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <h2 style="color: var(--text-color);">Payment Successful!</h2>
+            <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 1.5rem;">Your tour package booking has been confirmed.</p>
+
+            <div style="background-color: #f8fafc; border: 1px dashed var(--border-color); border-radius: var(--radius-md); padding: 1.25rem; text-align: left; font-size: 0.9rem; margin-bottom: 1.5rem; line-height: 1.8;">
+                <div><strong>Transaction ID:</strong> <span id="rec-trans-id" style="color: var(--primary-color); font-weight: 700;"></span></div>
+                <div><strong>Payment Method:</strong> <span id="rec-method"></span></div>
+                <div><strong>Booking ID:</strong> #<span id="rec-booking-id"></span></div>
+                <div><strong>Traveler Name:</strong> <span id="rec-name"></span></div>
+                <div><strong>Travel Date:</strong> <span id="rec-date"></span></div>
+                <div><strong>Total Paid:</strong> <strong id="rec-amount" style="font-size: 1.1rem; color: var(--success-color);"></strong></div>
+            </div>
+
+            <div style="display: flex; gap: 1rem;">
+                <a href="my-bookings.html" class="btn btn-primary" style="flex: 1;">View My Bookings</a>
+                <button onclick="window.print()" class="btn btn-outline"><i class="fa-solid fa-print"></i> Print Receipt</button>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="footer-bottom">&copy; 2026 TravelGo Portal.</div>
+    </footer>
+
+    <script src="api.js"></script>
+    <script>
+        let packagesMap = {};
+        let currentPaymentMethod = 'Credit/Debit Card';
+        let currentBaseAmount = 0;
+        let currentDiscountAmount = 0;
+        let appliedCoupon = null;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const user = getUser();
+            if (!getToken() || !user) {
+                window.location.href = 'login.html?redirect=booking.html';
+                return;
+            }
+
+            document.getElementById('full_name').value = user.name || '';
+            document.getElementById('email').value = user.email || '';
+            if (user.phone) document.getElementById('phone').value = user.phone;
+
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            const yyyy = tomorrow.getFullYear();
+            const mm = String(tomorrow.getMonth() + 1).padStart(2, '0');
+            const dd = String(tomorrow.getDate()).padStart(2, '0');
+            const minDateStr = `${yyyy}-${mm}-${dd}`;
+            document.getElementById('travel_date').setAttribute('min', minDateStr);
+            document.getElementById('travel_date').value = minDateStr;
+
+            const selectEl = document.getElementById('package_id');
+            const res = await api.get('/packages');
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const preselectedPkgId = urlParams.get('package');
+
+            if (res.ok && res.data.packages) {
+                res.data.packages.forEach(pkg => {
+                    packagesMap[pkg.id] = pkg;
+                    const opt = document.createElement('option');
+                    opt.value = pkg.id;
+                    opt.textContent = `${pkg.title} (${pkg.destination_name}) - ₹${Number(pkg.price).toLocaleString('en-IN')}/person`;
+                    if (preselectedPkgId && String(pkg.id) === String(preselectedPkgId)) {
+                        opt.selected = true;
+                    }
+                    selectEl.appendChild(opt);
+                });
+            }
+
+            calculateTotalPrice();
+
+            selectEl.addEventListener('change', calculateTotalPrice);
+            document.getElementById('num_people').addEventListener('input', calculateTotalPrice);
+        });
+
+        function calculateTotalPrice() {
+            const pkgId = document.getElementById('package_id').value;
+            const numPeople = parseInt(document.getElementById('num_people').value, 10) || 0;
+
+            if (pkgId && packagesMap[pkgId] && numPeople > 0) {
+                currentBaseAmount = Number(packagesMap[pkgId].price) * numPeople;
+            } else {
+                currentBaseAmount = 0;
+                currentDiscountAmount = 0;
+                appliedCoupon = null;
+            }
+            updatePriceDisplay();
+        }
+
+        function updatePriceDisplay() {
+            const baseEl = document.getElementById('base-amount-display');
+            const discRow = document.getElementById('discount-row');
+            const discEl = document.getElementById('discount-amount-display');
+            const totalEl = document.getElementById('total-price-display');
+
+            baseEl.textContent = `₹${currentBaseAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+
+            if (appliedCoupon && currentDiscountAmount > 0) {
+                document.getElementById('applied-coupon-code').textContent = appliedCoupon;
+                discEl.textContent = `-₹${currentDiscountAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+                discRow.style.display = 'flex';
+            } else {
+                discRow.style.display = 'none';
+            }
+
+            const finalTotal = Math.max(0, currentBaseAmount - currentDiscountAmount);
+            totalEl.textContent = `₹${finalTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+
+            updateQRCodeImage(finalTotal);
+        }
+
+        async function applyPromoCoupon() {
+            const code = document.getElementById('coupon_input').value.trim();
+            if (!code) {
+                showAlert('Please enter a coupon code.');
+                return;
+            }
+            if (currentBaseAmount <= 0) {
+                showAlert('Please select a package and travelers first.');
+                return;
+            }
+
+            const res = await api.post('/coupons/apply', {
+                code,
+                booking_amount: currentBaseAmount
+            });
+
+            if (res.ok && res.data.success) {
+                appliedCoupon = res.data.code;
+                currentDiscountAmount = res.data.discount_amount;
+                showAlert(`<strong>Coupon Applied!</strong> Saved ₹${currentDiscountAmount.toLocaleString('en-IN')}`, 'success');
+                updatePriceDisplay();
+            } else {
+                showAlert(res.data.message || 'Invalid coupon code.');
+            }
+        }
+
+        function updateQRCodeImage(amount) {
+            const upiUrl = `upi://pay?pa=travelgo@upi&pn=TravelGo%20Portal&am=${amount}&cu=INR`;
+            const qrImgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(upiUrl)}`;
+            document.getElementById('qr-code-img').src = qrImgUrl;
+        }
+
+        function togglePaymentSection() {
+            const isOnline = document.querySelector('input[name="pay_option"]:checked').value === 'online';
+            const sec = document.getElementById('online-payment-section');
+            const btn = document.getElementById('submit-btn');
+            if (isOnline) {
+                sec.style.display = 'block';
+                btn.textContent = 'Pay & Confirm Booking';
+            } else {
+                sec.style.display = 'none';
+                btn.textContent = 'Submit Booking (Pay Later)';
+            }
+        }
+
+        function selectPaymentMethod(method) {
+            currentPaymentMethod = method;
+            document.querySelectorAll('.payment-option-card').forEach(c => c.classList.remove('active'));
+
+            if (method === 'Credit/Debit Card') {
+                document.getElementById('method-card').classList.add('active');
+                document.getElementById('card-form').style.display = 'block';
+                document.getElementById('upi-form').style.display = 'none';
+                document.getElementById('netbank-form').style.display = 'none';
+            } else if (method === 'UPI / GPay / PhonePe') {
+                document.getElementById('method-upi').classList.add('active');
+                document.getElementById('card-form').style.display = 'none';
+                document.getElementById('upi-form').style.display = 'block';
+                document.getElementById('netbank-form').style.display = 'none';
+                updateQRCodeImage(Math.max(0, currentBaseAmount - currentDiscountAmount));
+            } else if (method === 'Net Banking') {
+                document.getElementById('method-netbank').classList.add('active');
+                document.getElementById('card-form').style.display = 'none';
+                document.getElementById('upi-form').style.display = 'none';
+                document.getElementById('netbank-form').style.display = 'block';
+            }
+        }
+
+        const alertBanner = document.getElementById('alert-banner');
+        function showAlert(msg, type = 'danger') {
+            alertBanner.className = `alert alert-${type}`;
+            alertBanner.innerHTML = msg;
+            alertBanner.style.display = 'block';
+        }
+
+        document.getElementById('booking-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            alertBanner.style.display = 'none';
+
+            const package_id = parseInt(document.getElementById('package_id').value, 10);
+            const full_name = document.getElementById('full_name').value;
+            const email = document.getElementById('email').value;
+            const phone = document.getElementById('phone').value;
+            const num_people = parseInt(document.getElementById('num_people').value, 10);
+            const travel_date = document.getElementById('travel_date').value;
+            const isOnline = document.querySelector('input[name="pay_option"]:checked').value === 'online';
+
+            if (!package_id) {
+                showAlert('Please select a tour package.');
+                return;
+            }
+
+            const payload = {
+                package_id,
+                full_name,
+                email,
+                phone,
+                num_people,
+                travel_date,
+                coupon_code: appliedCoupon,
+                payment_method: isOnline ? currentPaymentMethod : 'pay_later',
+                card_number: document.getElementById('card_number').value,
+                card_expiry: document.getElementById('card_expiry').value,
+                card_cvv: document.getElementById('card_cvv').value,
+                upi_id: document.getElementById('upi_id').value
+            };
+
+            const submitBtn = document.getElementById('submit-btn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = isOnline ? 'Processing Payment...' : 'Submitting Booking...';
+
+            const res = await api.post('/bookings', payload);
+
+            submitBtn.disabled = false;
+            submitBtn.textContent = isOnline ? 'Pay & Confirm Booking' : 'Submit Booking (Pay Later)';
+
+            if (res.ok && res.data.success) {
+                if (res.data.payment_status === 'paid') {
+                    document.getElementById('rec-trans-id').textContent = res.data.payment_id;
+                    document.getElementById('rec-method').textContent = res.data.payment_method;
+                    document.getElementById('rec-booking-id').textContent = res.data.bookingId;
+                    document.getElementById('rec-name').textContent = full_name;
+                    document.getElementById('rec-date').textContent = travel_date;
+                    document.getElementById('rec-amount').textContent = `₹${Number(res.data.total_price).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+                    document.getElementById('receipt-modal').style.display = 'flex';
+                } else {
+                    showAlert(`<strong>Success!</strong> ${escapeHTML(res.data.message)} <a href="my-bookings.html" style="text-decoration: underline; color: inherit; margin-left: 0.5rem;">View My Bookings</a>`, 'success');
+                    document.getElementById('booking-form').reset();
+                    appliedCoupon = null;
+                    calculateTotalPrice();
+                }
+            } else {
+                showAlert(escapeHTML(res.data.message || 'Failed to process booking or payment. Please try again.'));
+            }
+        });
+    </script>
+</body>
+</html>

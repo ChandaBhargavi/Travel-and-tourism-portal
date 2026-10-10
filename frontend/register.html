@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Account - TravelGo</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <nav class="navbar">
+        <a href="index.html" class="logo">
+            <i class="fa-solid fa-plane-departure"></i> TravelGo
+        </a>
+        <ul class="nav-links" id="nav-links"></ul>
+    </nav>
+
+    <main class="container">
+        <div class="form-card">
+            <div class="page-header" style="margin-bottom: 1.5rem;">
+                <h1>Create an Account</h1>
+                <p>Join TravelGo to book tours and manage your travel bookings.</p>
+            </div>
+
+            <div id="alert-banner" class="alert"></div>
+
+            <form id="register-form">
+                <div class="form-group">
+                    <label for="name">Full Name *</label>
+                    <input type="text" id="name" name="name" class="form-control" placeholder="John Doe" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email Address *</label>
+                    <input type="email" id="email" name="email" class="form-control" placeholder="john@example.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="phone">Phone Number</label>
+                    <input type="tel" id="phone" name="phone" class="form-control" placeholder="+91 9876543210">
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password * (Min 6 characters)</label>
+                    <input type="password" id="password" name="password" class="form-control" placeholder="••••••••" required minlength="6">
+                </div>
+
+                <div class="form-group">
+                    <label for="confirm_password">Confirm Password *</label>
+                    <input type="password" id="confirm_password" name="confirm_password" class="form-control" placeholder="••••••••" required>
+                </div>
+
+                <button type="submit" id="submit-btn" class="btn btn-accent" style="width: 100%;">Create Account</button>
+            </form>
+
+            <div style="text-align: center; margin-top: 1.5rem; font-size: 0.95rem; color: var(--text-muted);">
+                Already have an account? <a href="login.html" style="color: var(--primary-color); font-weight: 600;">Log In</a>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="footer-bottom">&copy; 2026 TravelGo Portal.</div>
+    </footer>
+
+    <script src="api.js"></script>
+    <script>
+        const alertBanner = document.getElementById('alert-banner');
+        function showAlert(msg, type = 'danger') {
+            alertBanner.className = `alert alert-${type}`;
+            alertBanner.innerHTML = msg;
+            alertBanner.style.display = 'block';
+        }
+
+        document.getElementById('register-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            alertBanner.style.display = 'none';
+
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const phone = document.getElementById('phone').value;
+            const password = document.getElementById('password').value;
+            const confirm_password = document.getElementById('confirm_password').value;
+
+            if (password !== confirm_password) {
+                showAlert('Passwords do not match. Please check and try again.');
+                return;
+            }
+
+            if (password.length < 6) {
+                showAlert('Password must be at least 6 characters long.');
+                return;
+            }
+
+            const submitBtn = document.getElementById('submit-btn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Registering...';
+
+            const res = await api.post('/auth/register', { name, email, phone, password });
+
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Create Account';
+
+            if (res.ok && res.data.success) {
+                showAlert('Registration successful! Redirecting to login...', 'success');
+                setTimeout(() => {
+                    window.location.href = 'login.html?registered=1';
+                }, 1200);
+            } else {
+                showAlert(escapeHTML(res.data.message || 'Registration failed. Please try again.'));
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Bookings - TravelGo</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <nav class="navbar">
+        <a href="index.html" class="logo">
+            <i class="fa-solid fa-plane-departure"></i> TravelGo
+        </a>
+        <ul class="nav-links" id="nav-links"></ul>
+    </nav>
+
+    <main class="container">
+        <div class="page-header">
+            <h1>My Booking History</h1>
+            <p>Track your reserved tour packages, payment statuses, and transactions.</p>
+        </div>
+
+        <div id="alert-banner" class="alert"></div>
+
+        <div id="bookings-list" class="grid">
+            <p style="text-align:center; grid-column: 1/-1;">Loading your bookings...</p>
+        </div>
+    </main>
+
+    <!-- Pay Now Modal for Unpaid Bookings -->
+    <div id="pay-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <button onclick="closePayModal()" class="modal-close-btn">&times;</button>
+            <h2 style="margin-bottom: 0.5rem; text-align: center;">Complete Online Payment</h2>
+            <p style="text-align: center; color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">
+                Booking #<span id="pay-modal-booking-id"></span> - Total Payable: <strong id="pay-modal-amount" style="color: var(--primary-color);"></strong>
+            </p>
+
+            <form id="pay-modal-form">
+                <input type="hidden" id="pay-modal-target-id">
+                
+                <div class="payment-methods-grid">
+                    <div class="payment-option-card active" id="modal-method-card" onclick="selectModalPaymentMethod('Credit/Debit Card')">
+                        <i class="fa-solid fa-credit-card"></i>
+                        <span>Card</span>
+                    </div>
+                    <div class="payment-option-card" id="modal-method-upi" onclick="selectModalPaymentMethod('UPI / GPay / PhonePe')">
+                        <i class="fa-solid fa-mobile-screen-button"></i>
+                        <span>UPI / QR</span>
+                    </div>
+                    <div class="payment-option-card" id="modal-method-netbank" onclick="selectModalPaymentMethod('Net Banking')">
+                        <i class="fa-solid fa-building-columns"></i>
+                        <span>Net Banking</span>
+                    </div>
+                </div>
+
+                <div class="payment-details-box">
+                    <!-- Card Form -->
+                    <div id="modal-card-form">
+                        <div class="form-group">
+                            <label>Card Number</label>
+                            <input type="text" id="m_card_number" class="form-control" placeholder="4532 1122 3344 5566" maxlength="19">
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <div class="form-group">
+                                <label>Expiry Date</label>
+                                <input type="text" id="m_card_expiry" class="form-control" placeholder="MM/YY" maxlength="5">
+                            </div>
+                            <div class="form-group">
+                                <label>CVV</label>
+                                <input type="password" id="m_card_cvv" class="form-control" placeholder="123" maxlength="4">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- UPI Form -->
+                    <div id="modal-upi-form" style="display: none; text-align: center;">
+                        <div class="form-group" style="text-align: left;">
+                            <label>UPI ID</label>
+                            <input type="text" id="m_upi_id" class="form-control" placeholder="name@upi">
+                        </div>
+                    </div>
+
+                    <!-- Net Banking Form -->
+                    <div id="modal-netbank-form" style="display: none;">
+                        <div class="form-group">
+                            <label>Select Bank</label>
+                            <select id="m_bank_name" class="form-control">
+                                <option value="State Bank of India">State Bank of India (SBI)</option>
+                                <option value="HDFC Bank">HDFC Bank</option>
+                                <option value="ICICI Bank">ICICI Bank</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" id="modal-pay-btn" class="btn btn-success" style="width: 100%;">Pay Now</button>
+            </form>
+        </div>
+    </div>
+
+    <footer>
+        <div class="footer-bottom">&copy; 2026 TravelGo Portal.</div>
+    </footer>
+
+    <script src="api.js"></script>
+    <script>
+        let modalPaymentMethod = 'Credit/Debit Card';
+        const alertBanner = document.getElementById('alert-banner');
+
+        function showAlert(msg, type = 'danger') {
+            alertBanner.className = `alert alert-${type}`;
+            alertBanner.innerHTML = msg;
+            alertBanner.style.display = 'block';
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (!getToken()) {
+                window.location.href = 'login.html?redirect=my-bookings.html';
+                return;
+            }
+            loadBookings();
+        });
+
+        async function loadBookings() {
+            const listContainer = document.getElementById('bookings-list');
+            const res = await api.get('/bookings/my');
+
+            if (res.ok && res.data.bookings) {
+                if (res.data.bookings.length === 0) {
+                    listContainer.innerHTML = `
+                        <div style="text-align: center; grid-column: 1/-1; padding: 3rem; background: #fff; border-radius: var(--radius-lg);">
+                            <i class="fa-solid fa-suitcase-rolling" style="font-size: 3rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
+                            <h3>No Bookings Found</h3>
+                            <p style="color: var(--text-muted); margin-bottom: 1.5rem;">You haven't booked any tour packages yet.</p>
+                            <a href="tour-packages.html" class="btn btn-primary">Browse Tour Packages</a>
+                        </div>
+                    `;
+                    return;
+                }
+
+                listContainer.innerHTML = res.data.bookings.map(b => {
+                    const priceFormatted = Number(b.total_price).toLocaleString('en-IN');
+                    const travelDate = new Date(b.travel_date).toLocaleDateString('en-IN', {
+                        year: 'numeric', month: 'short', day: 'numeric'
+                    });
+
+                    const isPaid = b.payment_status === 'paid';
+
+                    return `
+                        <div class="card">
+                            <img src="${escapeHTML(b.package_image || 'https://via.placeholder.com/400x250')}" alt="${escapeHTML(b.package_title)}" class="card-img">
+                            <div class="card-body">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.4rem;">
+                                    <div>
+                                        <span class="badge badge-${escapeHTML(b.status)}">${escapeHTML(b.status)}</span>
+                                        <span class="badge badge-${isPaid ? 'paid' : 'unpaid'}" style="margin-left: 0.3rem;">
+                                            <i class="fa-solid ${isPaid ? 'fa-lock' : 'fa-clock'}"></i> ${isPaid ? 'PAID' : 'UNPAID'}
+                                        </span>
+                                    </div>
+                                    <span class="price-tag" style="font-size: 1.1rem;">₹${priceFormatted}</span>
+                                </div>
+                                <h3 class="card-title">${escapeHTML(b.package_title)}</h3>
+                                <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.8rem;">
+                                    <i class="fa-solid fa-location-dot"></i> ${escapeHTML(b.destination_name)}
+                                </p>
+                                <div style="font-size: 0.9rem; line-height: 1.6; margin-bottom: 1.25rem;">
+                                    <div><strong>Traveler Name:</strong> ${escapeHTML(b.full_name)}</div>
+                                    <div><strong>Travelers:</strong> ${b.num_people} Person(s)</div>
+                                    <div><strong>Travel Date:</strong> ${travelDate}</div>
+                                    ${isPaid ? `
+                                        <div style="font-size: 0.85rem; color: var(--primary-dark); margin-top: 0.3rem; background: var(--primary-light); padding: 0.3rem 0.6rem; border-radius: 4px;">
+                                            <strong>Txn ID:</strong> ${escapeHTML(b.payment_id)} (${escapeHTML(b.payment_method)})
+                                        </div>
+                                    ` : ''}
+                                </div>
+
+                                <div style="display: flex; gap: 0.5rem;">
+                                    ${!isPaid && b.status !== 'cancelled' ? `
+                                        <button onclick="openPayModal(${b.id}, ${b.total_price})" class="btn btn-success btn-sm" style="flex: 1;"><i class="fa-solid fa-credit-card"></i> Pay Now</button>
+                                    ` : ''}
+
+                                    ${b.status !== 'cancelled' ? `
+                                        <button onclick="cancelBooking(${b.id})" class="btn btn-danger btn-sm" style="${!isPaid ? 'flex: 1;' : 'width: 100%;'}">Cancel</button>
+                                    ` : `
+                                        <button disabled class="btn btn-sm" style="width: 100%; background: #e2e8f0; color: #94a3b8; cursor: not-allowed;">Cancelled</button>
+                                    `}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } else {
+                showAlert(escapeHTML(res.data.message || 'Failed to fetch bookings.'));
+            }
+        }
+
+        function openPayModal(bookingId, amount) {
+            document.getElementById('pay-modal-target-id').value = bookingId;
+            document.getElementById('pay-modal-booking-id').textContent = bookingId;
+            document.getElementById('pay-modal-amount').textContent = `₹${Number(amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+            document.getElementById('pay-modal').style.display = 'flex';
+        }
+
+        function closePayModal() {
+            document.getElementById('pay-modal').style.display = 'none';
+        }
+
+        function selectModalPaymentMethod(method) {
+            modalPaymentMethod = method;
+            document.querySelectorAll('#pay-modal .payment-option-card').forEach(c => c.classList.remove('active'));
+
+            if (method === 'Credit/Debit Card') {
+                document.getElementById('modal-method-card').classList.add('active');
+                document.getElementById('modal-card-form').style.display = 'block';
+                document.getElementById('modal-upi-form').style.display = 'none';
+                document.getElementById('modal-netbank-form').style.display = 'none';
+            } else if (method === 'UPI / GPay / PhonePe') {
+                document.getElementById('modal-method-upi').classList.add('active');
+                document.getElementById('modal-card-form').style.display = 'none';
+                document.getElementById('modal-upi-form').style.display = 'block';
+                document.getElementById('modal-netbank-form').style.display = 'none';
+            } else if (method === 'Net Banking') {
+                document.getElementById('modal-method-netbank').classList.add('active');
+                document.getElementById('modal-card-form').style.display = 'none';
+                document.getElementById('modal-upi-form').style.display = 'none';
+                document.getElementById('modal-netbank-form').style.display = 'block';
+            }
+        }
+
+        document.getElementById('pay-modal-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const bookingId = document.getElementById('pay-modal-target-id').value;
+            const btn = document.getElementById('modal-pay-btn');
+            btn.disabled = true;
+            btn.textContent = 'Processing Payment...';
+
+            const payload = {
+                payment_method: modalPaymentMethod,
+                card_number: document.getElementById('m_card_number').value,
+                card_expiry: document.getElementById('m_card_expiry').value,
+                card_cvv: document.getElementById('m_card_cvv').value,
+                upi_id: document.getElementById('m_upi_id').value
+            };
+
+            const res = await api.post(`/bookings/${bookingId}/pay`, payload);
+
+            btn.disabled = false;
+            btn.textContent = 'Pay Now';
+
+            if (res.ok && res.data.success) {
+                closePayModal();
+                showAlert(`<strong>Payment Successful!</strong> Txn ID: ${escapeHTML(res.data.payment_id)}. Your booking is now confirmed.`, 'success');
+                loadBookings();
+            } else {
+                alert(res.data.message || 'Payment processing failed. Please try again.');
+            }
+        });
+
+        async function cancelBooking(bookingId) {
+            if (!confirm('Are you sure you want to cancel this booking?')) return;
+
+            const res = await api.patch(`/bookings/${bookingId}/cancel`);
+            if (res.ok && res.data.success) {
+                showAlert('Booking cancelled successfully.', 'success');
+                loadBookings();
+            } else {
+                showAlert(escapeHTML(res.data.message || 'Could not cancel booking.'));
+            }
+        }
+    </script>
+</body>
+</html>

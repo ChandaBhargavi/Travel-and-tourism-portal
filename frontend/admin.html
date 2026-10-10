@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - TravelGo</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js for Visual Analytics Charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+    <nav class="navbar">
+        <a href="index.html" class="logo">
+            <i class="fa-solid fa-plane-departure"></i> TravelGo Admin
+        </a>
+        <ul class="nav-links" id="nav-links"></ul>
+    </nav>
+
+    <main class="container">
+        <div class="page-header" style="text-align: left; margin-bottom: 1.5rem;">
+            <h1>Admin Control Panel & Analytics</h1>
+            <p>Monitor booking trends, revenue distribution, payment gateways, and system CRUD.</p>
+        </div>
+
+        <div id="alert-banner" class="alert"></div>
+
+        <!-- Dashboard Stat Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-title">Total Users</div>
+                <div class="stat-value" id="stat-users">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-title">Total Bookings</div>
+                <div class="stat-value" id="stat-bookings">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-title">Paid Transactions</div>
+                <div class="stat-value" id="stat-paid-bookings">0</div>
+            </div>
+            <div class="stat-card revenue">
+                <div class="stat-title">Confirmed & Paid Revenue</div>
+                <div class="stat-value" id="stat-revenue">₹0.00</div>
+            </div>
+        </div>
+
+        <!-- Interactive Visual Analytics Charts (Feature 7) -->
+        <div class="charts-grid">
+            <div class="chart-card">
+                <h3><i class="fa-solid fa-chart-column" style="color: var(--primary-color);"></i> Top Destinations Booking Distribution</h3>
+                <canvas id="destinationsChart" height="200"></canvas>
+            </div>
+            <div class="chart-card">
+                <h3><i class="fa-solid fa-chart-pie" style="color: var(--accent-color);"></i> Payment Gateway Breakdown</h3>
+                <canvas id="paymentMethodsChart" height="200"></canvas>
+            </div>
+        </div>
+
+        <!-- Admin Tabs -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('tab-bookings')"><i class="fa-solid fa-receipt"></i> Bookings</button>
+            <button class="tab-btn" onclick="switchTab('tab-users')"><i class="fa-solid fa-users"></i> Users</button>
+            <button class="tab-btn" onclick="switchTab('tab-destinations')"><i class="fa-solid fa-map-location-dot"></i> Destinations</button>
+            <button class="tab-btn" onclick="switchTab('tab-packages')"><i class="fa-solid fa-box-archive"></i> Tour Packages</button>
+        </div>
+
+        <!-- Tab 1: Bookings Management -->
+        <div id="tab-bookings" class="tab-content active">
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>User / Name</th>
+                            <th>Package & Destination</th>
+                            <th>Travelers & Date</th>
+                            <th>Total Price</th>
+                            <th>Payment Info</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bookings-table-body">
+                        <tr><td colspan="8" style="text-align: center;">Loading bookings...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Tab 2: Users List -->
+        <div id="tab-users" class="tab-content">
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Role</th>
+                            <th>Joined Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="users-table-body">
+                        <tr><td colspan="6" style="text-align: center;">Loading users...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Tab 3: Destinations Management -->
+        <div id="tab-destinations" class="tab-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h3>Destinations Management</h3>
+                <button onclick="openDestinationForm()" class="btn btn-primary btn-sm"><i class="fa-solid fa-plus"></i> Add Destination</button>
+            </div>
+
+            <!-- Destination Form Box -->
+            <div id="dest-form-container" class="form-card" style="display: none; max-width: 100%; margin: 0 0 1.5rem 0;">
+                <h4 id="dest-form-title">Add New Destination</h4>
+                <form id="dest-form" style="margin-top: 1rem;">
+                    <input type="hidden" id="dest-id">
+                    <div class="form-group">
+                        <label>Destination Name *</label>
+                        <input type="text" id="dest-name" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea id="dest-desc" class="form-control" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Image URL</label>
+                        <input type="url" id="dest-image" class="form-control" placeholder="https://images.unsplash.com/...">
+                    </div>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button type="submit" class="btn btn-primary btn-sm">Save Destination</button>
+                        <button type="button" onclick="closeDestinationForm()" class="btn btn-outline btn-sm">Cancel</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Image</th>
+                            <th>Name</th>
+                            <th>Description</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="destinations-table-body">
+                        <tr><td colspan="5" style="text-align: center;">Loading destinations...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Tab 4: Packages Management -->
+        <div id="tab-packages" class="tab-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h3>Tour Packages Management</h3>
+                <button onclick="openPackageForm()" class="btn btn-primary btn-sm"><i class="fa-solid fa-plus"></i> Add Package</button>
+            </div>
+
+            <!-- Package Form Box -->
+            <div id="pkg-form-container" class="form-card" style="display: none; max-width: 100%; margin: 0 0 1.5rem 0;">
+                <h4 id="pkg-form-title">Add New Tour Package</h4>
+                <form id="pkg-form" style="margin-top: 1rem;">
+                    <input type="hidden" id="pkg-id">
+                    <div class="form-group">
+                        <label>Destination *</label>
+                        <select id="pkg-destination-id" class="form-control" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Package Title *</label>
+                        <input type="text" id="pkg-title" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea id="pkg-desc" class="form-control" rows="3"></textarea>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label>Duration Days *</label>
+                            <input type="number" id="pkg-days" class="form-control" min="1" value="1" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Duration Nights *</label>
+                            <input type="number" id="pkg-nights" class="form-control" min="0" value="0" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Price (₹) *</label>
+                            <input type="number" id="pkg-price" class="form-control" step="0.01" min="0" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Image URL</label>
+                        <input type="url" id="pkg-image" class="form-control">
+                    </div>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button type="submit" class="btn btn-primary btn-sm">Save Package</button>
+                        <button type="button" onclick="closePackageForm()" class="btn btn-outline btn-sm">Cancel</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Title</th>
+                            <th>Destination</th>
+                            <th>Duration</th>
+                            <th>Price</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="packages-table-body">
+                        <tr><td colspan="6" style="text-align: center;">Loading packages...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script src="api.js"></script>
+    <script>
+        let destChart = null;
+        let payChart = null;
+        const alertBanner = document.getElementById('alert-banner');
+
+        function showAlert(msg, type = 'danger') {
+            alertBanner.className = `alert alert-${type}`;
+            alertBanner.innerHTML = msg;
+            alertBanner.style.display = 'block';
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const user = getUser();
+            if (!getToken() || !user || user.role !== 'admin') {
+                alert('Access denied. Admin permissions required.');
+                window.location.href = 'index.html';
+                return;
+            }
+
+            loadStats();
+            loadBookings();
+            loadUsers();
+            loadDestinations();
+            loadPackages();
+        });
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+            event.currentTarget.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        async function loadStats() {
+            const res = await api.get('/admin/stats');
+            if (res.ok && res.data.stats) {
+                const s = res.data.stats;
+                document.getElementById('stat-users').textContent = s.total_users;
+                document.getElementById('stat-bookings').textContent = s.total_bookings;
+                document.getElementById('stat-paid-bookings').textContent = s.total_paid_bookings || 0;
+                document.getElementById('stat-revenue').textContent = `₹${Number(s.total_revenue).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+
+                renderCharts(s.top_destinations || [], s.payment_methods || []);
+            }
+        }
+
+        function renderCharts(topDestinations, paymentMethods) {
+            if (typeof Chart === 'undefined') return;
+
+            // Destinations Bar Chart
+            const destCtx = document.getElementById('destinationsChart').getContext('2d');
+            const destLabels = topDestinations.length > 0 ? topDestinations.map(d => d.destination_name) : ['Goa', 'Agra', 'Kerala', 'Manali'];
+            const destData = topDestinations.length > 0 ? topDestinations.map(d => d.booking_count) : [5, 3, 4, 2];
+
+            if (destChart) destChart.destroy();
+            destChart = new Chart(destCtx, {
+                type: 'bar',
+                data: {
+                    labels: destLabels,
+                    datasets: [{
+                        label: 'Bookings Count',
+                        data: destData,
+                        backgroundColor: '#0d9488',
+                        borderRadius: 6
+                    }]
+                },
+                options: { responsive: true, plugins: { legend: { display: false } } }
+            });
+
+            // Payment Methods Doughnut Chart
+            const payCtx = document.getElementById('paymentMethodsChart').getContext('2d');
+            const payLabels = paymentMethods.length > 0 ? paymentMethods.map(p => p.method) : ['Credit/Debit Card', 'UPI / QR', 'Pay Later'];
+            const payData = paymentMethods.length > 0 ? paymentMethods.map(p => p.count) : [3, 4, 1];
+
+            if (payChart) payChart.destroy();
+            payChart = new Chart(payCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: payLabels,
+                    datasets: [{
+                        data: payData,
+                        backgroundColor: ['#f97316', '#10b981', '#64748b', '#0d9488']
+                    }]
+                },
+                options: { responsive: true }
+            });
+        }
+
+        async function loadBookings() {
+            const res = await api.get('/admin/bookings');
+            const tbody = document.getElementById('bookings-table-body');
+            if (res.ok && res.data.bookings) {
+                if (res.data.bookings.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">No bookings found.</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = res.data.bookings.map(b => {
+                    const priceFormatted = Number(b.total_price).toLocaleString('en-IN');
+                    const travelDate = new Date(b.travel_date).toLocaleDateString('en-IN');
+                    const isPaid = b.payment_status === 'paid';
+
+                    return `
+                        <tr>
+                            <td>#${b.id}</td>
+                            <td><strong>${escapeHTML(b.full_name)}</strong><br><small>${escapeHTML(b.email)}</small></td>
+                            <td>${escapeHTML(b.package_title)}<br><small style="color:var(--text-muted);">${escapeHTML(b.destination_name)}</small></td>
+                            <td>${b.num_people} PPL | ${travelDate}</td>
+                            <td>
+                                <strong>₹${priceFormatted}</strong>
+                                ${b.discount_amount > 0 ? `<br><small style="color:var(--success-color);">Saved ₹${Number(b.discount_amount).toLocaleString('en-IN')}</small>` : ''}
+                            </td>
+                            <td>
+                                <span class="badge badge-${isPaid ? 'paid' : 'unpaid'}">${isPaid ? 'PAID' : 'UNPAID'}</span>
+                                ${isPaid ? `<br><small style="font-size: 0.75rem; color: var(--primary-dark);">${escapeHTML(b.payment_id)}</small>` : ''}
+                            </td>
+                            <td>
+                                <select onchange="updateStatus(${b.id}, this.value)" class="form-control" style="padding: 0.2rem 0.4rem; font-size: 0.85rem;">
+                                    <option value="pending" ${b.status === 'pending' ? 'selected' : ''}>Pending</option>
+                                    <option value="confirmed" ${b.status === 'confirmed' ? 'selected' : ''}>Confirmed</option>
+                                    <option value="cancelled" ${b.status === 'cancelled' ? 'selected' : ''}>Cancelled</option>
+                                </select>
+                            </td>
+                            <td>
+                                <button onclick="deleteBooking(${b.id})" class="btn btn-danger btn-sm"><i class="fa-solid fa-trash"></i></button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+        }
+
+        async function updateStatus(id, newStatus) {
+            const res = await api.patch(`/admin/bookings/${id}/status`, { status: newStatus });
+            if (res.ok) {
+                showAlert(`Booking #${id} status updated to ${newStatus}`, 'success');
+                loadStats();
+            } else {
+                showAlert(res.data.message || 'Failed to update status');
+            }
+        }
+
+        async function deleteBooking(id) {
+            if (!confirm(`Delete booking #${id}?`)) return;
+            const res = await api.delete(`/admin/bookings/${id}`);
+            if (res.ok) {
+                showAlert(`Booking #${id} deleted`, 'success');
+                loadBookings();
+                loadStats();
+            } else {
+                showAlert(res.data.message || 'Failed to delete booking');
+            }
+        }
+
+        async function loadUsers() {
+            const res = await api.get('/admin/users');
+            const tbody = document.getElementById('users-table-body');
+            if (res.ok && res.data.users) {
+                tbody.innerHTML = res.data.users.map(u => `
+                    <tr>
+                        <td>${u.id}</td>
+                        <td><strong>${escapeHTML(u.name)}</strong></td>
+                        <td>${escapeHTML(u.email)}</td>
+                        <td>${escapeHTML(u.phone || 'N/A')}</td>
+                        <td><span class="badge ${u.role === 'admin' ? 'badge-confirmed' : 'badge-pending'}">${u.role}</span></td>
+                        <td>${new Date(u.created_at).toLocaleDateString()}</td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        let allDestinations = [];
+        async function loadDestinations() {
+            const res = await api.get('/destinations');
+            const tbody = document.getElementById('destinations-table-body');
+            if (res.ok && res.data.destinations) {
+                allDestinations = res.data.destinations;
+                
+                const selectPkgDest = document.getElementById('pkg-destination-id');
+                selectPkgDest.innerHTML = allDestinations.map(d => `<option value="${d.id}">${escapeHTML(d.name)}</option>`).join('');
+
+                tbody.innerHTML = allDestinations.map(d => `
+                    <tr>
+                        <td>${d.id}</td>
+                        <td><img src="${escapeHTML(d.image_url)}" style="width: 50px; height: 35px; object-fit: cover; border-radius: 4px;"></td>
+                        <td><strong>${escapeHTML(d.name)}</strong></td>
+                        <td>${escapeHTML(d.description)}</td>
+                        <td>
+                            <button onclick='editDestination(${JSON.stringify(d).replace(/'/g, "&apos;")})' class="btn btn-outline btn-sm"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="deleteDestination(${d.id})" class="btn btn-danger btn-sm"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        function openDestinationForm() {
+            document.getElementById('dest-id').value = '';
+            document.getElementById('dest-form').reset();
+            document.getElementById('dest-form-title').textContent = 'Add New Destination';
+            document.getElementById('dest-form-container').style.display = 'block';
+        }
+
+        function closeDestinationForm() {
+            document.getElementById('dest-form-container').style.display = 'none';
+        }
+
+        function editDestination(d) {
+            document.getElementById('dest-id').value = d.id;
+            document.getElementById('dest-name').value = d.name;
+            document.getElementById('dest-desc').value = d.description || '';
+            document.getElementById('dest-image').value = d.image_url || '';
+            document.getElementById('dest-form-title').textContent = `Edit Destination #${d.id}`;
+            document.getElementById('dest-form-container').style.display = 'block';
+        }
+
+        document.getElementById('dest-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('dest-id').value;
+            const name = document.getElementById('dest-name').value;
+            const description = document.getElementById('dest-desc').value;
+            const image_url = document.getElementById('dest-image').value;
+
+            let res;
+            if (id) {
+                res = await api.put(`/admin/destinations/${id}`, { name, description, image_url });
+            } else {
+                res = await api.post('/admin/destinations', { name, description, image_url });
+            }
+
+            if (res.ok) {
+                showAlert(`Destination ${id ? 'updated' : 'created'} successfully!`, 'success');
+                closeDestinationForm();
+                loadDestinations();
+                loadStats();
+            } else {
+                showAlert(res.data.message || 'Failed to save destination');
+            }
+        });
+
+        async function deleteDestination(id) {
+            if (!confirm(`Delete destination #${id}? Note: This will delete associated packages!`)) return;
+            const res = await api.delete(`/admin/destinations/${id}`);
+            if (res.ok) {
+                showAlert('Destination deleted', 'success');
+                loadDestinations();
+                loadPackages();
+                loadStats();
+            } else {
+                showAlert(res.data.message || 'Failed to delete destination');
+            }
+        }
+
+        async function loadPackages() {
+            const res = await api.get('/packages');
+            const tbody = document.getElementById('packages-table-body');
+            if (res.ok && res.data.packages) {
+                tbody.innerHTML = res.data.packages.map(p => `
+                    <tr>
+                        <td>${p.id}</td>
+                        <td><strong>${escapeHTML(p.title)}</strong></td>
+                        <td>${escapeHTML(p.destination_name)}</td>
+                        <td>${p.duration_days}D / ${p.duration_nights}N</td>
+                        <td>₹${Number(p.price).toLocaleString('en-IN')}</td>
+                        <td>
+                            <button onclick='editPackage(${JSON.stringify(p).replace(/'/g, "&apos;")})' class="btn btn-outline btn-sm"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="deletePackage(${p.id})" class="btn btn-danger btn-sm"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        function openPackageForm() {
+            document.getElementById('pkg-id').value = '';
+            document.getElementById('pkg-form').reset();
+            document.getElementById('pkg-form-title').textContent = 'Add New Tour Package';
+            document.getElementById('pkg-form-container').style.display = 'block';
+        }
+
+        function closePackageForm() {
+            document.getElementById('pkg-form-container').style.display = 'none';
+        }
+
+        function editPackage(p) {
+            document.getElementById('pkg-id').value = p.id;
+            document.getElementById('pkg-destination-id').value = p.destination_id;
+            document.getElementById('pkg-title').value = p.title;
+            document.getElementById('pkg-desc').value = p.description || '';
+            document.getElementById('pkg-days').value = p.duration_days;
+            document.getElementById('pkg-nights').value = p.duration_nights;
+            document.getElementById('pkg-price').value = p.price;
+            document.getElementById('pkg-image').value = p.image_url || '';
+            document.getElementById('pkg-form-title').textContent = `Edit Tour Package #${p.id}`;
+            document.getElementById('pkg-form-container').style.display = 'block';
+        }
+
+        document.getElementById('pkg-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('pkg-id').value;
+            const destination_id = parseInt(document.getElementById('pkg-destination-id').value, 10);
+            const title = document.getElementById('pkg-title').value;
+            const description = document.getElementById('pkg-desc').value;
+            const duration_days = parseInt(document.getElementById('pkg-days').value, 10);
+            const duration_nights = parseInt(document.getElementById('pkg-nights').value, 10);
+            const price = parseFloat(document.getElementById('pkg-price').value);
+            const image_url = document.getElementById('pkg-image').value;
+
+            let res;
+            if (id) {
+                res = await api.put(`/admin/packages/${id}`, { destination_id, title, description, duration_days, duration_nights, price, image_url });
+            } else {
+                res = await api.post('/admin/packages', { destination_id, title, description, duration_days, duration_nights, price, image_url });
+            }
+
+            if (res.ok) {
+                showAlert(`Tour package ${id ? 'updated' : 'created'} successfully!`, 'success');
+                closePackageForm();
+                loadPackages();
+            } else {
+                showAlert(res.data.message || 'Failed to save package');
+            }
+        });
+
+        async function deletePackage(id) {
+            if (!confirm(`Delete tour package #${id}?`)) return;
+            const res = await api.delete(`/admin/packages/${id}`);
+            if (res.ok) {
+                showAlert('Package deleted', 'success');
+                loadPackages();
+            } else {
+                showAlert(res.data.message || 'Failed to delete package');
+            }
+        }
+    </script>
+</body>
+</html>
